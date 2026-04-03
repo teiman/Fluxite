@@ -11,18 +11,5 @@ dist/
 .env
 *.log
 npm-debug.log*
-
-# Fluxite suggestions
-.DS_Store
-Thumbs.db
-*.swp
-*~
-.claude/
-.cursor/
-.vscode/
-.idea/
-node_modules/
-dist/
-.env
-*.log
-npm-debug.log*
+json/
+catalog.md
