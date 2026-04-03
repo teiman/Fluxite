@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fluxite</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Fluxite</h1>
+    <p class="subtitle">Upload your projects to GitHub without the hassle</p>
+    <nav class="main-nav">
+      <button class="nav-btn active" onclick="showView('wizard')">New project</button>
+      <button class="nav-btn" onclick="showView('catalog')">Catalog</button>
+      <button class="nav-btn" onclick="showView('search')">Find projects</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Catalog View -->
+    <section id="view-catalog" class="view-panel hidden">
+      <h2>Uploaded projects</h2>
+      <div id="catalog-list" class="catalog-list">
+        <p class="hint">Loading...</p>
+      </div>
+    </section>
+
+    <!-- Search View -->
+    <section id="view-search" class="view-panel hidden">
+      <h2>Find projects</h2>
+      <p class="hint">Scan a local directory for git repos whose remote matches your GitHub account.</p>
+      <div class="input-row" style="margin-bottom:0.5rem;">
+        <input type="text" id="search-dir" placeholder="D:/code" />
+        <button id="btn-search" onclick="searchProjects()">Search</button>
+      </div>
+      <div class="form-group" style="margin-top:0.5rem;">
+        <label>Max depth:
+          <select id="search-depth" style="width:auto; display:inline-block; margin-left:0.5rem;">
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </label>
+      </div>
+      <div id="search-results"></div>
+    </section>
+
+    <!-- Wizard View -->
+    <div id="view-wizard">
+    <div class="steps">
+      <div class="step-indicator">
+        <span class="step-dot active" data-step="1">1</span>
+        <span class="step-line"></span>
+        <span class="step-dot" data-step="2">2</span>
+        <span class="step-line"></span>
+        <span class="step-dot" data-step="3">3</span>
+        <span class="step-line"></span>
+        <span class="step-dot" data-step="4">4</span>
+        <span class="step-line"></span>
+        <span class="step-dot" data-step="5">5</span>
+      </div>
+    </div>
+
+    <!-- Step 1: Select folder -->
+    <section id="step-1" class="step-panel active">
+      <h2>1. Select project</h2>
+      <div class="input-row">
+        <input type="text" id="dir-path" placeholder="D:/code/my-project" />
+        <button id="btn-scan" onclick="scanDir()">Scan</button>
+      </div>
+      <div id="scan-result" class="result-box hidden">
+        <div id="file-tree"></div>
+        <div id="detected-langs"></div>
+      </div>
+      <div class="step-actions">
+        <button class="btn-next" onclick="goStep(2)" disabled id="btn-to-2">Next</button>
+      </div>
+    </section>
+
+    <!-- Step 2: .gitignore -->
+    <section id="step-2" class="step-panel hidden">
+      <h2>2. Review .gitignore</h2>
+      <p class="hint">Auto-generated based on detected files. You can edit it.</p>
+      <textarea id="gitignore-content" rows="12"></textarea>
+      <div id="gitignore-suggestions" class="suggestions hidden">
+        <p class="hint">Recommended rules missing from your .gitignore:</p>
+        <div id="suggestions-list"></div>
+        <button class="btn-save" onclick="applySuggestions()">Apply selected</button>
+      </div>
+      <div class="step-actions">
+        <button class="btn-back" onclick="goStep(1)">Back</button>
+        <button class="btn-save" onclick="saveGitignore()">Save .gitignore</button>
+        <button class="btn-next" onclick="goStep(3)">Next</button>
+      </div>
+    </section>
+
+    <!-- Step 3: GitHub auth -->
+    <section id="step-3" class="step-panel hidden">
+      <h2>3. GitHub authentication</h2>
+      <p class="hint">Enter your Personal Access Token (PAT). It will be saved for next time.</p>
+      <div class="input-row">
+        <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx" />
+        <button onclick="validateGHToken()">Validate</button>
+      </div>
+      <div id="gh-user" class="result-box hidden">
+        <img id="gh-avatar" src="" alt="avatar" />
+        <span id="gh-login"></span>
+      </div>
+      <div class="step-actions">
+        <button class="btn-back" onclick="goStep(2)">Back</button>
+        <button class="btn-next" onclick="goStep(4)" disabled id="btn-to-4">Next</button>
+      </div>
+    </section>
+
+    <!-- Step 4: Create/Select repo -->
+    <section id="step-4" class="step-panel hidden">
+      <h2>4. Repository</h2>
+      <div class="tabs">
+        <button class="tab active" onclick="showTab('new-repo')">Create new</button>
+        <button class="tab" onclick="showTab('existing-repo')">Use existing</button>
+      </div>
+
+      <div id="tab-new-repo" class="tab-content active">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" id="repo-name" placeholder="my-project" />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" id="repo-desc" placeholder="Optional description" />
+        </div>
+        <div class="form-group">
+          <label><input type="checkbox" id="repo-private" /> Private</label>
+        </div>
+        <button onclick="createNewRepo()">Create repository</button>
+      </div>
+
+      <div id="tab-existing-repo" class="tab-content hidden">
+        <button onclick="loadRepos()">Load my repositories</button>
+        <select id="repo-list" size="8" class="hidden"></select>
+      </div>
+
+      <div id="selected-repo" class="result-box hidden">
+        Selected repo: <strong id="selected-repo-name"></strong>
+      </div>
+
+      <div class="step-actions">
+        <button class="btn-back" onclick="goStep(3)">Back</button>
+        <button class="btn-next" onclick="goStep(5)" disabled id="btn-to-5">Next</button>
+      </div>
+    </section>
+
+    <!-- Step 5: Push -->
+    <section id="step-5" class="step-panel hidden">
+      <h2>5. Upload project</h2>
+      <div class="summary">
+        <p><strong>Project:</strong> <span id="summary-dir"></span></p>
+        <p><strong>Repository:</strong> <span id="summary-repo"></span></p>
+      </div>
+      <button class="btn-push" onclick="pushProject()">Push to GitHub</button>
+      <div id="push-result" class="result-box hidden"></div>
+      <div id="push-done" class="hidden" style="text-align:center; margin-top:1.5rem;">
+        <a href="#" onclick="resetWizard(); return false;" class="reset-link">Upload another project</a>
+      </div>
+      <div class="step-actions">
+        <button class="btn-back" onclick="goStep(4)">Back</button>
+      </div>
+    </section>
+    </div><!-- /view-wizard -->
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
